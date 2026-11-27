@@ -1,4 +1,4 @@
-# MyStudyDost — Progress Checklist
+# BrainBuddy — Progress Checklist
 
 Status key: `not done` · `working (proof)` · `broken` · `not tested`
 

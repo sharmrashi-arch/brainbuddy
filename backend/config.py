@@ -11,6 +11,7 @@ PUBLIC_URL = os.getenv("PUBLIC_URL", "http://127.0.0.1:8000")
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 SERP_API_KEY = os.getenv("SERP_API_KEY", "")
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
 
 # Read every model name from .env so they can be changed without touching code.
 GROQ_MODEL = os.getenv("GROQ_MODEL_MAIN", os.getenv("GROQ_MODEL", "openai/gpt-oss-120b"))
@@ -18,15 +19,15 @@ GROQ_MODEL_FAST = os.getenv("GROQ_MODEL_FAST", "openai/gpt-oss-20b")
 GROQ_MODEL_VISION = os.getenv("GROQ_MODEL_VISION", "qwen/qwen3.8-27b")
 GROQ_MODEL_STT = os.getenv("GROQ_MODEL_STT", "whisper-large-v3-turbo")
 
-DATA_DIR = BASE_DIR / "data"
+DATA_DIR = Path(os.getenv("DATA_DIR", str(BASE_DIR / "data")))
 RAW_DATA_DIR = DATA_DIR / "raw"
 CATALOG_PATH = DATA_DIR / "catalog.json"
 SOURCES_PATH = DATA_DIR / "sources.json"
 
-DB_DIR = BASE_DIR / "db"
+DB_DIR = Path(os.getenv("DB_DIR", str(BASE_DIR / "db")))
 CACHE_DB_PATH = DB_DIR / "cache.sqlite3"
 HISTORY_DB_PATH = DB_DIR / "history.sqlite3"
-TMP_DIR = BASE_DIR / "tmp"
+TMP_DIR = Path(os.getenv("TMP_DIR", str(BASE_DIR / "tmp")))
 
 RETRIEVAL_TOP_K = 5
 DISTANCE_THRESHOLD = 1.2

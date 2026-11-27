@@ -1,14 +1,19 @@
-const CACHE = 'msd-v1';
+const CACHE = 'brainbuddy-v2';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(self.clients.claim());
+  event.waitUntil(
+    caches.keys()
+      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+      .then(() => self.clients.claim())
+  );
 });
 
-// Network-first for pages, cache-first for static assets, never cache API calls.
+// Network-first: always get fresh code when online, fall back to cache when offline.
+// API and download responses are never cached.
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
@@ -17,13 +22,12 @@ self.addEventListener('fetch', (event) => {
   if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/downloads/')) return;
 
   event.respondWith(
-    caches.match(req).then((cached) => {
-      if (cached) return cached;
-      return fetch(req).then((resp) => {
+    fetch(req)
+      .then((resp) => {
         const copy = resp.clone();
         caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
         return resp;
-      }).catch(() => cached);
-    })
+      })
+      .catch(() => caches.match(req))
   );
 });

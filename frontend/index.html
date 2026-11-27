@@ -7,23 +7,24 @@
   <meta name="theme-color" content="#0F766E" media="(prefers-color-scheme: dark)">
   <meta name="description" content="BrainBuddy - AI assistant for every question. Notes, presentations, photos, maths, writing help, translation in 100+ languages. Studies are just one part.">
   <title>BrainBuddy - Har Sawal ka Jawab | AI Assistant</title>
-  <link rel="canonical" href="https://mystudydost.app/">
+  <link rel="canonical" href="./index.html">
   <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
   <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="BrainBuddy">
-  <meta property="og:title" content="BrainBuddy - Har Sawal ka Jawab">
+  <meta property="og:title" content="BrainBuddy — Har Sawal ka Jawab | AI Assistant">
   <meta property="og:description" content="AI assistant for every kind of question. Notes, presentations, photos, maths, writing, translation in 100+ languages. Studies included.">
-  <meta property="og:image" content="https://mystudydost.app/og-image.png">
+  <meta property="og:image" content="assets/og-image.png">
+  <meta property="og:image:type" content="image/png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="BrainBuddy - AI Study Assistant">
+  <meta property="og:image:alt" content="BrainBuddy — AI Study Assistant">
   <meta property="og:locale" content="en_IN">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="BrainBuddy - Har Sawal ka Jawab">
+  <meta name="twitter:title" content="BrainBuddy — Har Sawal ka Jawab">
   <meta name="twitter:description" content="AI assistant for every kind of question. Notes, presentations, photos, maths, writing, translation in 100+ languages. Studies included.">
-  <meta name="twitter:image" content="https://mystudydost.app/og-image.png">
+  <meta name="twitter:image" content="assets/og-image.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -62,13 +63,14 @@
         </section>
       </nav>
       <div class="sidebar-footer">
-        <div class="profile-row">
-          <div class="avatar">U</div>
-          <div class="profile-info">
+        <button type="button" class="profile-row" id="profileRow" aria-haspopup="menu" aria-expanded="false">
+          <span class="avatar">U</span>
+          <span class="profile-info">
             <span class="profile-name">User</span>
             <span class="profile-plan" data-i18n="planFree">Free</span>
-          </div>
-        </div>
+          </span>
+          <svg class="icon profile-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+        </button>
       </div>
     </aside>
 
@@ -270,6 +272,31 @@
       </button>
     </div>
     <div class="scrim" id="scrim" aria-hidden="true"></div>
+  </div>
+
+  <div class="login-screen" id="loginScreen" hidden>
+    <div class="login-card">
+      <img src="assets/logo.png" class="login-logo" alt="BrainBuddy">
+      <h1 class="login-title" data-i18n="loginTitle">Welcome to BrainBuddy</h1>
+      <p class="login-sub" data-i18n="loginSub">Sign in to continue — Har Sawal ka Jawab</p>
+      <button type="button" class="btn-google" id="googleLoginBtn">
+        <svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true">
+          <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+          <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.17 7.09-10.32 7.09-17.65z"/>
+          <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+          <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.8l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+        </svg>
+        <span data-i18n="continueGoogle">Continue with Google</span>
+      </button>
+      <div id="googleBtnContainer" class="google-btn-container" hidden></div>
+      <div class="login-divider"><span data-i18n="loginOr">or</span></div>
+      <form id="emailLoginForm" class="login-form">
+        <input type="text" id="loginName" data-i18n-placeholder="loginName" placeholder="Your name" autocomplete="name">
+        <input type="email" id="loginEmail" data-i18n-placeholder="loginEmail" placeholder="Email address" autocomplete="email">
+        <button type="submit" class="btn-primary login-submit" data-i18n="loginContinue">Continue</button>
+      </form>
+      <p class="login-note" data-i18n="loginNote">By continuing you agree to use BrainBuddy responsibly.</p>
+    </div>
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>

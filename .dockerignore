@@ -1,0 +1,13 @@
+.venv
+.git
+__pycache__
+*.pyc
+*.pyo
+db
+tmp
+data/raw
+.env
+frontend_old
+tests
+.pytest_cache
+*.log

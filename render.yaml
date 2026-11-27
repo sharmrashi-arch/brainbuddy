@@ -1,0 +1,33 @@
+# Render blueprint for BrainBuddy
+# Free plan: no disk (history resets on restart). For persistent history use a paid plan (disk below).
+services:
+  - type: web
+    name: brainbuddy
+    runtime: docker
+    plan: starter            # free -> remove 'plan' and the 'disk' block
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: PUBLIC_URL
+        fromService:
+          type: web
+          name: brainbuddy
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: DB_DIR
+        value: /app/data/db
+      - key: TMP_DIR
+        value: /app/data/tmp
+      - key: GROQ_API_KEY
+        sync: false
+      - key: SERP_API_KEY
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+    disk:
+      name: brainbuddy-data
+      mountPath: /app/data
+      sizeGB: 1

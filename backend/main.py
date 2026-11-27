@@ -18,7 +18,7 @@ try:
     from .config import (
         APP_NAME, APP_ENV, BASE_DIR, CATALOG_PATH, MAX_QUESTION_LENGTH,
         MAX_UPLOAD_MB, MAX_FILE_TEXT, MAX_PDF_PAGES, TMP_DIR, PRIVACY_NOTE,
-        CORS_ORIGINS, RATE_LIMIT_PER_MINUTE, DOWNLOAD_TTL_SECONDS,
+        CORS_ORIGINS, RATE_LIMIT_PER_MINUTE, DOWNLOAD_TTL_SECONDS, GOOGLE_CLIENT_ID,
     )
     from .rag import answer_question, answer_stream, generate_quiz, solve_pdf_text
     from .vision import describe_images, prepare_image
@@ -35,7 +35,7 @@ except ImportError:
     from config import (
         APP_NAME, APP_ENV, BASE_DIR, CATALOG_PATH, MAX_QUESTION_LENGTH,
         MAX_UPLOAD_MB, MAX_FILE_TEXT, MAX_PDF_PAGES, TMP_DIR, PRIVACY_NOTE,
-        CORS_ORIGINS, RATE_LIMIT_PER_MINUTE, DOWNLOAD_TTL_SECONDS,
+        CORS_ORIGINS, RATE_LIMIT_PER_MINUTE, DOWNLOAD_TTL_SECONDS, GOOGLE_CLIENT_ID,
     )
     from rag import answer_question, answer_stream, generate_quiz, solve_pdf_text
     from vision import describe_images, prepare_image
@@ -170,6 +170,10 @@ class VisionRequest(BaseModel):
     language: str = "en"
 
 
+class GoogleAuthRequest(BaseModel):
+    credential: str = ""             # Google ID token (JWT) from GIS
+
+
 class ChatCreate(BaseModel):
     title: str = "New Chat"
     board: str = ""
@@ -210,7 +214,29 @@ def api_config():
         "app": APP_NAME,
         "env": APP_ENV,
         "groqReady": has_groq(),
+        "googleClientId": GOOGLE_CLIENT_ID,
         "privacy": PRIVACY_NOTE,
+    }
+
+
+@app.post("/auth/google")
+def google_auth(req: GoogleAuthRequest):
+    """Verify a Google ID token (from Google Identity Services) and return the profile."""
+    if not GOOGLE_CLIENT_ID:
+        raise HTTPException(status_code=400, detail="Google login not configured (set GOOGLE_CLIENT_ID)")
+    if not req.credential:
+        raise HTTPException(status_code=400, detail="Missing credential")
+    try:
+        from google.oauth2 import id_token
+        from google.auth.transport import requests as grequests
+        info = id_token.verify_oauth2_token(req.credential, grequests.Request(), GOOGLE_CLIENT_ID)
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid Google token")
+    email = info.get("email") or ""
+    return {
+        "name": info.get("name") or (email.split("@")[0] if email else "User"),
+        "email": email,
+        "picture": info.get("picture"),
     }
 
 

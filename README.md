@@ -31,6 +31,7 @@ py -3.14 -m venv .venv
 pip install -r requirements.txt
 Copy-Item .env.example .env
 # .env me GROQ_API_KEY, SERP_API_KEY aur model names bharo (kabhi commit mat karo)
+# Optional real Google login: GOOGLE_CLIENT_ID (Google Cloud Console -> OAuth client ID)
 python scripts/make_icons.py        # optional: (re)generate icons + OG image
 uvicorn backend.main:app --reload
 ```
@@ -82,3 +83,12 @@ docs/      BrainBuddy_v2_Kilo_Prompt.md
 
 ## Note
 BrainBuddy galti kar sakta hai. Zaroori baat ek baar jaanch lijiye.
+
+## Live deploy (Render)
+1. Code GitHub par push karo (ye repo: `sharmrashi-arch/brainbuddy`).
+2. [render.com](https://render.com) par account banao → **New → Blueprint** → ye repo select karo (`render.yaml` auto-detect hoga).
+3. Env vars bharo (dashboard me): `GROQ_API_KEY`, `SERP_API_KEY`, `GOOGLE_CLIENT_ID` (optional), `GOOGLE_CLIENT_SECRET` (optional).
+4. Google Cloud Console me OAuth client ke **Authorized JavaScript origins** me apna Render URL daalo (e.g. `https://brainbuddy.onrender.com`).
+5. Deploy → live URL milega (e.g. `https://brainbuddy.onrender.com`).
+
+> Free plan par restart/spin-down par chat history reset ho sakti hai. Persistent history ke liye paid plan + disk (`render.yaml` me `disk` block) use karo.

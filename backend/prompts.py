@@ -38,6 +38,7 @@ def build_system_prompt(language="en", level="normal", mode="chat"):
         "Answer any study or general question in a clear, friendly way. "
         "Never invent facts, book pages or links; if unsure, say you are not sure. "
         "%s " % level_hint +
+        "If the user asks for 'WhatsApp language', 'chat/texting style', 'casual', 'simple/easy language' or 'short', reply in a friendly, casual, short texting style (like WhatsApp messages) with simple words and short lines — do NOT explain what 'WhatsApp language' means, just use that style while still answering the actual question. " +
         "Respond in %s unless the user explicitly asks for another language. " % lang +
         "When sources/context are provided, mention them briefly at the end. "
         "Decline harmful, illegal or adult content politely."

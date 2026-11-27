@@ -59,14 +59,22 @@
   const qs = (sel) => document.querySelector(sel);
   const qsa = (sel) => document.querySelectorAll(sel);
 
-  const SESSION_ID = (function () {
-    let id = localStorage.getItem('msd_session');
-    if (!id) {
-      id = 's-' + Math.random().toString(36).slice(2) + Date.now().toString(36);
-      localStorage.setItem('msd_session', id);
-    }
-    return id;
-  })();
+  const PROFILES_KEY = 'msd_profiles';
+  const ACTIVE_KEY = 'msd_active';
+  function loadProfiles() {
+    try { return JSON.parse(localStorage.getItem(PROFILES_KEY) || '{}') || {}; }
+    catch (e) { return {}; }
+  }
+  function saveProfiles(p) { localStorage.setItem(PROFILES_KEY, JSON.stringify(p)); }
+  function newSessionId() { return 's-' + Math.random().toString(36).slice(2) + Date.now().toString(36); }
+  function activeName() { return localStorage.getItem(ACTIVE_KEY) || 'User'; }
+  function ensureProfile(name) {
+    const p = loadProfiles();
+    if (!p[name]) { p[name] = newSessionId(); saveProfiles(p); }
+    return p[name];
+  }
+  function profileName() { return activeName(); }
+  let SESSION_ID = ensureProfile(activeName());
   let activeController = null;
   const apiFetch = (url, opts) => {
     opts = opts || {};
@@ -77,9 +85,12 @@
   function init() {
     loadTheme();
     loadLanguage();
+    updateProfileUI();
     renderLangList();
     loadHistory();
     bindEvents();
+    initAuth();
+    initGoogle();
     autoResizeTextareas();
     checkDarkMode();
     if ('serviceWorker' in navigator) {
@@ -114,12 +125,303 @@
 
   function updateThemeIcon() {}
 
+  function applyTheme(theme) {
+    currentTheme = theme || 'system';
+    const resolved = currentTheme === 'system'
+      ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+      : currentTheme;
+    document.documentElement.setAttribute('data-theme', resolved);
+    saveTheme();
+    updateThemeIcon();
+  }
+
+  // ---------- Profile menu (settings / switch account / logout) ----------
+  function updateProfileUI() {
+    const name = profileName();
+    const nameEl = qs('.profile-name');
+    if (nameEl) nameEl.textContent = name;
+    const av = qs('#profileRow .avatar');
+    if (av) av.textContent = (name.charAt(0) || 'U').toUpperCase();
+  }
+
+  function setActiveProfile(name) {
+    const n = String(name || 'User').trim().slice(0, 40) || 'User';
+    localStorage.setItem(ACTIVE_KEY, n);
+    SESSION_ID = ensureProfile(n);
+    updateProfileUI();
+  }
+
+  function closeProfileMenu() {
+    const m = qs('#profileMenu');
+    if (m) m.remove();
+    const row = qs('#profileRow');
+    if (row) row.setAttribute('aria-expanded', 'false');
+  }
+
+  function toggleProfileMenu() {
+    if (qs('#profileMenu')) { closeProfileMenu(); return; }
+    const row = qs('#profileRow');
+    const footer = qs('.sidebar-footer');
+    if (!row || !footer) return;
+    row.setAttribute('aria-expanded', 'true');
+    const name = profileName();
+    const menu = document.createElement('div');
+    menu.id = 'profileMenu';
+    menu.className = 'profile-menu';
+    menu.setAttribute('role', 'menu');
+    menu.innerHTML = `
+      <div class="profile-menu-head">
+        <div class="avatar">${escapeHtml((name.charAt(0) || 'U').toUpperCase())}</div>
+        <div class="profile-menu-info">
+          <span class="profile-menu-name">${escapeHtml(name)}</span>
+          <span class="profile-menu-plan">${t('planFree')}</span>
+        </div>
+      </div>
+      <button type="button" class="profile-menu-item" data-profile-action="settings" role="menuitem">
+        <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        <span>${t('profileSettings')}</span>
+      </button>
+      <button type="button" class="profile-menu-item" data-profile-action="switch" role="menuitem">
+        <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 1l4 4-4 4"></path><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><path d="M7 23l-4-4 4-4"></path><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
+        <span>${t('switchAccount')}</span>
+      </button>
+      <div class="profile-menu-sep"></div>
+      <button type="button" class="profile-menu-item danger" data-profile-action="logout" role="menuitem">
+        <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+        <span>${t('logout')}</span>
+      </button>`;
+    footer.appendChild(menu);
+    menu.querySelectorAll('[data-profile-action]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const action = btn.dataset.profileAction;
+        closeProfileMenu();
+        if (action === 'settings') openSettings();
+        else if (action === 'switch') openSwitchAccount();
+        else if (action === 'logout') openLogout();
+      });
+    });
+  }
+
+  // ---------- Generic app modal ----------
+  function closeAppModal() {
+    const m = qs('#appModal');
+    if (m) m.remove();
+  }
+
+  function openAppModal(opts) {
+    closeAppModal();
+    const ov = document.createElement('div');
+    ov.className = 'modal-overlay';
+    ov.id = 'appModal';
+    const cancelBtn = opts.hideCancel ? '' :
+      '<button type="button" class="btn-secondary" data-appmodal-close>' + t('cancelBtn') + '</button>';
+    const confirmBtn = opts.confirmLabel === null ? '' :
+      '<button type="button" class="btn-primary" id="appModalConfirm">' + (opts.confirmLabel || t('saveBtn')) + '</button>';
+    ov.innerHTML = `
+      <div class="modal" role="document">
+        <div class="modal-header">
+          <h2>${escapeHtml(opts.title || '')}</h2>
+          <button class="icon-btn" data-appmodal-close aria-label="Close"><svg class="icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+        </div>
+        <div class="modal-body">${opts.html || ''}</div>
+        <div class="modal-footer">${cancelBtn}${confirmBtn}</div>
+      </div>`;
+    document.body.appendChild(ov);
+    ov.querySelectorAll('[data-appmodal-close]').forEach(b => b.addEventListener('click', closeAppModal));
+    ov.addEventListener('click', (e) => { if (e.target === ov) closeAppModal(); });
+    const confirm = ov.querySelector('#appModalConfirm');
+    if (confirm && opts.onConfirm) {
+      confirm.addEventListener('click', () => {
+        const keep = opts.onConfirm(ov);
+        if (keep !== false) closeAppModal();
+      });
+    }
+    if (opts.onMount) opts.onMount(ov);
+    return ov;
+  }
+
+  function openSettings() {
+    const theme = currentTheme || 'system';
+    const level = localStorage.getItem('answer_level') || 'normal';
+    const voice = localStorage.getItem('always_speak') === '1';
+    openAppModal({
+      title: t('settingsTitle'),
+      confirmLabel: t('saveBtn'),
+      html: `
+        <div class="settings-list">
+          <label class="settings-row">
+            <span class="settings-label">${t('settingsTheme')}</span>
+            <select id="setTheme">
+              <option value="light">${t('themeLight')}</option>
+              <option value="dark">${t('themeDark')}</option>
+              <option value="system">${t('themeSystem')}</option>
+            </select>
+          </label>
+          <label class="settings-row">
+            <span class="settings-label">${t('settingsLevel')}</span>
+            <select id="setLevel">
+              <option value="simple">${t('levelSimple')}</option>
+              <option value="normal">${t('levelNormal')}</option>
+              <option value="detailed">${t('levelDetailed')}</option>
+            </select>
+          </label>
+          <label class="settings-row">
+            <span class="settings-label">${t('settingsVoice')}</span>
+            <input type="checkbox" id="setVoice">
+          </label>
+          <div class="settings-note">${t('settingsNote')}</div>
+        </div>`,
+      onMount(ov) {
+        ov.querySelector('#setTheme').value = theme;
+        ov.querySelector('#setLevel').value = level;
+        ov.querySelector('#setVoice').checked = voice;
+      },
+      onConfirm(ov) {
+        applyTheme(ov.querySelector('#setTheme').value);
+        localStorage.setItem('answer_level', ov.querySelector('#setLevel').value);
+        localStorage.setItem('always_speak', ov.querySelector('#setVoice').checked ? '1' : '0');
+        showToast(t('settingsSaved'));
+      },
+    });
+  }
+
+  function openSwitchAccount() {
+    openAppModal({
+      title: t('switchTitle'),
+      confirmLabel: t('switchAction'),
+      html: `
+        <div class="field">
+          <label for="switchName">${t('switchNameLabel')}</label>
+          <input id="switchName" type="text" maxlength="40" placeholder="${t('switchNamePh')}" autocomplete="off">
+        </div>
+        <div class="settings-note">${t('switchNote')}</div>`,
+      onMount(ov) {
+        const input = ov.querySelector('#switchName');
+        input.value = profileName() === 'Guest' ? '' : profileName();
+        input.focus();
+        input.select();
+      },
+      onConfirm(ov) {
+        const n = ov.querySelector('#switchName').value.trim();
+        if (!n) { showToast(t('switchNamePh')); return false; }
+        setActiveProfile(n);
+        newChat();
+        loadHistory();
+        showToast(t('switchedTo') + ' ' + n);
+      },
+    });
+  }
+
+  function openLogout() {
+    openAppModal({
+      title: t('logoutTitle'),
+      confirmLabel: t('logoutAction'),
+      html: '<div class="settings-note">' + t('logoutMsg') + '</div>',
+      onConfirm() {
+        try { localStorage.removeItem('msd_logged_in'); } catch (e) {}
+        newChat();
+        showLoginScreen();
+        showToast(t('loggedOut'));
+      },
+    });
+  }
+
+  // ---------- Login / auth (local demo) ----------
+  function isLoggedIn() { return localStorage.getItem('msd_logged_in') === '1'; }
+
+  function showLoginScreen() {
+    const l = qs('#loginScreen');
+    if (l) l.hidden = false;
+  }
+
+  function hideLoginScreen() {
+    const l = qs('#loginScreen');
+    if (l) l.hidden = true;
+  }
+
+  function doLogin(name, email) {
+    const n = (String(name || '').trim() || (email || '').split('@')[0] || 'User').slice(0, 40) || 'User';
+    try {
+      localStorage.setItem('msd_logged_in', '1');
+      if (email) localStorage.setItem('msd_user_email', email);
+    } catch (e) {}
+    setActiveProfile(n);
+    hideLoginScreen();
+    newChat();
+    loadHistory();
+    showToast(t('loggedInToast').replace('{name}', n));
+  }
+
+  function initAuth() {
+    if (isLoggedIn()) hideLoginScreen();
+    else showLoginScreen();
+  }
+
+  function googleLogin() {
+    // Local demo: instant Google sign-in (used only when GOOGLE_CLIENT_ID is not set).
+    doLogin('Rashi', 'rashi@gmail.com');
+  }
+
+  let googleClientId = '';
+
+  function loadGoogleScript() {
+    return new Promise((resolve) => {
+      if (window.google && window.google.accounts && window.google.accounts.id) { resolve(true); return; }
+      const s = document.createElement('script');
+      s.src = 'https://accounts.google.com/gsi/client';
+      s.async = true;
+      s.defer = true;
+      s.onload = () => resolve(true);
+      s.onerror = () => resolve(false);
+      document.head.appendChild(s);
+    });
+  }
+
+  async function initGoogle() {
+    try {
+      const res = await apiFetch('/api/config');
+      const cfg = await res.json();
+      googleClientId = cfg.googleClientId || '';
+    } catch (e) { googleClientId = ''; }
+    if (!googleClientId) return; // no client id -> keep demo button
+    const ok = await loadGoogleScript();
+    if (!ok || !window.google || !window.google.accounts || !window.google.accounts.id) return;
+    try {
+      window.google.accounts.id.initialize({ client_id: googleClientId, callback: handleGoogleCredential });
+      const container = document.getElementById('googleBtnContainer');
+      const customBtn = document.getElementById('googleLoginBtn');
+      if (container && customBtn) {
+        container.hidden = false;
+        customBtn.style.display = 'none';
+        window.google.accounts.id.renderButton(container, {
+          theme: 'outline', size: 'large', shape: 'pill',
+          text: 'continue_with', width: Math.min(300, container.clientWidth || 300),
+        });
+      }
+    } catch (e) {}
+  }
+
+  function handleGoogleCredential(response) {
+    if (!response || !response.credential) return;
+    apiFetch('/auth/google', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ credential: response.credential }),
+    })
+      .then(res => res.json().then(d => ({ ok: res.ok, d })))
+      .then(({ ok, d }) => {
+        if (!ok) { showToast((d && d.detail) || 'Google login failed'); return; }
+        doLogin(d.name, d.email);
+      })
+      .catch(() => showToast('Google login failed'));
+  }
+
   function loadLanguage() {
     const saved = localStorage.getItem('language');
     if (saved && LANGUAGES.find(l => l.code === saved)) {
       currentLang = saved;
     } else {
-      currentLang = 'en';
+      currentLang = 'auto';
     }
     updateLangButton();
     applyRTL();
@@ -340,6 +642,15 @@
     qs('#backBtn')?.addEventListener('click', newChat);
     qs('#newChatBtn')?.addEventListener('click', newChat);
     qs('#themeToggle')?.addEventListener('click', toggleTheme);
+    qs('#profileRow')?.addEventListener('click', (e) => { e.stopPropagation(); toggleProfileMenu(); });
+    qs('#googleLoginBtn')?.addEventListener('click', googleLogin);
+    qs('#emailLoginForm')?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const name = qs('#loginName').value.trim();
+      const email = qs('#loginEmail').value.trim();
+      if (!email || email.indexOf('@') < 0) { showToast(t('loginEmail')); return; }
+      doLogin(name || email.split('@')[0], email);
+    });
     qs('#langBtn')?.addEventListener('click', toggleLangDropdown);
     qs('#langSearch')?.addEventListener('click', e => e.stopPropagation());
 
@@ -369,11 +680,18 @@
       if (menu && !menu.hidden && !e.target.closest('#attachMenu') && !e.target.closest('#attachBtn') && !e.target.closest('#attachBtnBottom')) {
         closeAttachMenu();
       }
+      const pm = qs('#profileMenu');
+      if (pm && !e.target.closest('#profileMenu') && !e.target.closest('#profileRow')) {
+        closeProfileMenu();
+      }
     });
 
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
+        if (qs('#lightbox')) { closeLightbox(); return; }
         if (activePanel) { closeOptionModal(); return; }
+        if (qs('#appModal')) { closeAppModal(); return; }
+        closeProfileMenu();
         closeAttachMenu();
         if (isSidebarOpen) closeSidebar();
         if (isLangDropdownOpen) closeLangDropdown();
@@ -421,6 +739,12 @@
     qsa('.composer-textarea, .composer-bottom-textarea').forEach(ta => {
       ta.addEventListener('input', autoResizeTextareas);
       ta.addEventListener('input', updateSendButton);
+      ta.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
+          e.preventDefault();
+          sendMessage(ta.value.trim());
+        }
+      });
     });
 
     qs('#composerCard')?.addEventListener('submit', (e) => {
@@ -463,6 +787,11 @@
     });
 
     document.addEventListener('paste', handlePaste);
+
+    document.addEventListener('click', (e) => {
+      const img = e.target.closest('img.msg-image, .attach-chip img');
+      if (img && img.src) { e.preventDefault(); openLightbox(img.src); }
+    });
 
     qs('#micBtn')?.addEventListener('click', handleMicClick);
     qs('#micBtnBottom')?.addEventListener('click', handleMicClick);
@@ -631,6 +960,9 @@
       else { srcEl.style.display = 'none'; }
     }
     if (vp) vp.style.display = showVoice ? '' : 'none';
+    if (showVoice && text && localStorage.getItem('always_speak') === '1') {
+      try { speakText(text); } catch (e) {}
+    }
   }
 
   function recordAssistant(convoRef, question, reply, sources) {
@@ -664,7 +996,7 @@
       const res = await apiFetch('/api/chat/stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question, language: getApiLang(), attachments })
+        body: JSON.stringify({ question, language: getApiLang(), attachments, level: localStorage.getItem('answer_level') || 'normal' })
       });
       if (!res.ok || !res.body) throw new Error('stream failed');
       const reader = res.body.getReader();
@@ -1231,6 +1563,25 @@
     synth.speak(utterance);
   }
 
+  function closeLightbox() {
+    const l = qs('#lightbox');
+    if (l) l.remove();
+  }
+
+  function openLightbox(src) {
+    closeLightbox();
+    if (!src) return;
+    const ov = document.createElement('div');
+    ov.className = 'lightbox';
+    ov.id = 'lightbox';
+    const img = document.createElement('img');
+    img.src = src;
+    img.alt = 'preview';
+    ov.appendChild(img);
+    ov.addEventListener('click', closeLightbox);
+    document.body.appendChild(ov);
+  }
+
   function showToast(msg) {
     const existing = document.querySelector('.toast');
     if (existing) existing.remove();
@@ -1322,28 +1673,35 @@
       showToast(t('toastScreenshotUnsupported'));
       return;
     }
+    let stream = null;
+    let videoEl = null;
     try {
-      const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
-      const video = document.createElement('video');
-      video.srcObject = stream;
-      video.muted = true;
-      await video.play();
-      await new Promise(r => setTimeout(r, 250));
+      stream = await navigator.mediaDevices.getDisplayMedia({ video: { displaySurface: 'monitor' }, audio: false });
+      videoEl = document.createElement('video');
+      videoEl.muted = true;
+      videoEl.playsInline = true;
+      videoEl.srcObject = stream;
+      videoEl.style.cssText = 'position:fixed;left:-9999px;top:0;width:2px;height:2px;opacity:0;';
+      document.body.appendChild(videoEl);
+      await videoEl.play();
+      await new Promise(r => setTimeout(r, 300));
       const track = stream.getVideoTracks()[0];
-      const settings = track.getSettings ? track.getSettings() : {};
+      const settings = (track && track.getSettings) ? track.getSettings() : {};
       const canvas = document.createElement('canvas');
-      canvas.width = settings.width || video.videoWidth || 1280;
-      canvas.height = settings.height || video.videoHeight || 720;
-      canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
-      stream.getTracks().forEach(t => t.stop());
+      canvas.width = settings.width || videoEl.videoWidth || 1280;
+      canvas.height = settings.height || videoEl.videoHeight || 720;
+      canvas.getContext('2d').drawImage(videoEl, 0, 0, canvas.width, canvas.height);
       const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
-      if (blob) {
-        await uploadFiles([new File([blob], 'screenshot-' + Date.now() + '.png', { type: 'image/png' })]);
-        showToast(t('toastScreenshotAttached'));
-      }
+      if (!blob) { showToast(t('toastScreenshotFailed')); return; }
+      const file = new File([blob], 'screenshot-' + Date.now() + '.png', { type: 'image/png' });
+      await uploadFiles([file]);
+      showToast(t('toastScreenshotAttached'));
     } catch (e) {
       if (e && (e.name === 'NotAllowedError' || e.name === 'AbortError')) showToast(t('toastScreenshotCancelled'));
       else showToast(t('toastScreenshotFailed'));
+    } finally {
+      if (stream) { try { stream.getTracks().forEach(t => t.stop()); } catch (e) {} }
+      if (videoEl) { try { videoEl.remove(); } catch (e) {} }
     }
   }
 

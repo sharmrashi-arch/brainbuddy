@@ -1191,6 +1191,49 @@ const I18N = {
   }
 };
 
+// Profile menu + settings UI strings
+(function () {
+  var en = {
+    profileSettings: "Settings", switchAccount: "Switch account", logout: "Logout",
+    settingsTitle: "Settings", settingsTheme: "Theme", settingsLevel: "Answer level",
+    settingsVoice: "Always read answers aloud", settingsNote: "Preferences are saved on this device.",
+    settingsSaved: "Settings saved", themeLight: "Light", themeDark: "Dark", themeSystem: "System",
+    levelSimple: "Simple", levelNormal: "Normal", levelDetailed: "Detailed",
+    switchTitle: "Switch account", switchNameLabel: "Name", switchNamePh: "Enter your name",
+    switchNote: "Each name keeps its own chat history on this device.", switchAction: "Switch",
+    switchedTo: "Switched to", logoutTitle: "Log out?", logoutMsg: "Your current chat will be cleared from this device.",
+    logoutAction: "Log out", loggedOut: "Logged out", saveBtn: "Save",
+    screenshotPrompt: "Is screen ko dekho aur batao isme aage kya karna hai, step by step.",
+    loginTitle: "Welcome to BrainBuddy", loginSub: "Sign in to continue — Har Sawal ka Jawab",
+    continueGoogle: "Continue with Google", loginOr: "or", loginName: "Your name",
+    loginEmail: "Email address", loginContinue: "Continue",
+    loginNote: "By continuing you agree to use BrainBuddy responsibly.",
+    googleDemoNote: "Google sign-in is simulated in this local app. Enter your email to continue.",
+    loggedInToast: "Welcome, {name}!"
+  };
+  var hi = {
+    profileSettings: "सेटिंग्स", switchAccount: "अकाउंट बदलें", logout: "लॉग आउट",
+    settingsTitle: "सेटिंग्स", settingsTheme: "थीम", settingsLevel: "जवाब का स्तर",
+    settingsVoice: "जवाब हमेशा सुनाएँ", settingsNote: "सेटिंग्स इस डिवाइस पर सेव रहती हैं।",
+    settingsSaved: "सेटिंग्स सेव हो गईं", themeLight: "लाइट", themeDark: "डार्क", themeSystem: "सिस्टम",
+    levelSimple: "आसान", levelNormal: "सामान्य", levelDetailed: "विस्तार से",
+    switchTitle: "अकाउंट बदलें", switchNameLabel: "नाम", switchNamePh: "अपना नाम लिखें",
+    switchNote: "हर नाम की चैट इस डिवाइस पर अलग रहती है।", switchAction: "बदलें",
+    switchedTo: "बदल गए:", logoutTitle: "लॉग आउट करें?", logoutMsg: "मौजूदा चैट इस डिवाइस से हट जाएगी।",
+    logoutAction: "लॉग आउट", loggedOut: "लॉग आउट हो गए", saveBtn: "सेव करें",
+    screenshotPrompt: "इस स्क्रीन को देखो और बताओ इसमें आगे क्या करना है, चरण-दर-चरण।",
+    loginTitle: "BrainBuddy में आपका स्वागत है", loginSub: "जारी रखने के लिए साइन इन करें — हर सवाल का जवाब",
+    continueGoogle: "Google से जारी रखें", loginOr: "या", loginName: "आपका नाम",
+    loginEmail: "ईमेल पता", loginContinue: "जारी रखें",
+    loginNote: "जारी रखकर आप BrainBuddy का ज़िम्मेदारी से उपयोग करने के लिए सहमत हैं।",
+    googleDemoNote: "इस लोकल ऐप में Google साइन-इन डेमो है। जारी रखने के लिए अपना ईमेल डालें।",
+    loggedInToast: "स्वागत है, {name}!"
+  };
+  Object.assign(I18N.en, en);
+  if (I18N.hi) Object.assign(I18N.hi, hi);
+  if (I18N['hi-en']) Object.assign(I18N['hi-en'], hi);
+})();
+
 window.CURRENT_LANG = 'en';
 window.t = function (key) {
   const dict = I18N[window.CURRENT_LANG] || {};

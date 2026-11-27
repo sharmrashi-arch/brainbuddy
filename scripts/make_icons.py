@@ -64,12 +64,15 @@ def main():
     W, H = 1200, 630
     og = Image.new("RGB", (W, H), WHITE)
     d = ImageDraw.Draw(og)
-    d.rectangle([0, 0, 16, H], fill=TEAL)
-    og.paste(make_icon(120, logo), (80, 70))
-    d.text((230, 80), "BrainBuddy", fill=DARK, font=font(64))
-    d.text((232, 165), "Har Sawal ka Jawab", fill=TEAL, font=font(36))
-    d.text((80, 470), "AI assistant for everything - studies, work, writing, maths, photos, 100+ languages",
-           fill=MUTED, font=font(24, bold=False))
+    d.rectangle([0, 0, 18, H], fill=TEAL)
+    og.paste(make_icon(150, logo), (80, 80))
+    d.text((265, 72), "BrainBuddy", fill=DARK, font=font(74))
+    d.text((268, 165), "Har Sawal ka Jawab", fill=TEAL, font=font(40))
+    d.line([(80, 300), (1120, 300)], fill=(229, 231, 235), width=2)
+    d.text((80, 340), "AI assistant for everything:", fill=DARK, font=font(30, bold=True))
+    d.text((80, 392), "Studies - Work - Writing - Maths - Photos - 100+ languages", fill=MUTED, font=font(26, bold=False))
+    d.text((80, 438), "Notes - Presentations - PDF/Word/PPT - Voice - Chat history", fill=MUTED, font=font(26, bold=False))
+    d.text((80, 540), "brainbuddy", fill=TEAL, font=font(24, bold=True))
     og.save(ASSETS / "og-image.png")
     print("Icons + OG written to", ASSETS)
 

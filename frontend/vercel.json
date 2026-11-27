@@ -1,0 +1,7 @@
+{
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "https://brainbuddy-15aw.onrender.com/api/:path*" },
+    { "source": "/auth/:path*", "destination": "https://brainbuddy-15aw.onrender.com/auth/:path*" },
+    { "source": "/downloads/:path*", "destination": "https://brainbuddy-15aw.onrender.com/downloads/:path*" }
+  ]
+}

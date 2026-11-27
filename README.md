@@ -2,6 +2,8 @@
 
 AI assistant for every kind of question — studies, work, writing, maths, translation, photos, presentations, and more. Answers in the student's own language (100+ languages, auto-detect). Built on free/official sources with sources shown.
 
+**Live app:** https://brainbuddy-app.vercel.app · **Backend API:** https://brainbuddy-15aw.onrender.com
+
 ## Features
 - **Streaming chat** (ChatGPT-style, live typing, Stop button)
 - **Markdown + KaTeX maths** rendering (marked + DOMPurify + KaTeX)
@@ -84,11 +86,15 @@ docs/      BrainBuddy_v2_Kilo_Prompt.md
 ## Note
 BrainBuddy galti kar sakta hai. Zaroori baat ek baar jaanch lijiye.
 
-## Live deploy (Render)
-1. Code GitHub par push karo (ye repo: `sharmrashi-arch/brainbuddy`).
-2. [render.com](https://render.com) par account banao → **New → Blueprint** → ye repo select karo (`render.yaml` auto-detect hoga).
-3. Env vars bharo (dashboard me): `GROQ_API_KEY`, `SERP_API_KEY`, `GOOGLE_CLIENT_ID` (optional), `GOOGLE_CLIENT_SECRET` (optional).
-4. Google Cloud Console me OAuth client ke **Authorized JavaScript origins** me apna Render URL daalo (e.g. `https://brainbuddy.onrender.com`).
-5. Deploy → live URL milega (e.g. `https://brainbuddy.onrender.com`).
+## Live deploy (Vercel + Render)
+- **Frontend (Vercel):** https://brainbuddy-app.vercel.app
+- **Backend (Render):** https://brainbuddy-15aw.onrender.com
+- `frontend/vercel.json` rewrites `/api`, `/auth`, `/downloads` ko Render backend par proxy karta hai (CORS ki zaroorat nahi).
+
+### Redeploy / update
+- Frontend: `cd frontend` phir `vercel --prod`
+- Backend: Render push par auto-deploy (ya `render deploys`); env vars dashboard me.
+- Env vars (Render): `GROQ_API_KEY`, `SERP_API_KEY`, `GOOGLE_CLIENT_ID` (optional), `GOOGLE_CLIENT_SECRET` (optional).
+- Real Google login: Google Cloud Console → OAuth client → Authorized JavaScript origins me `https://brainbuddy-app.vercel.app` daalo.
 
 > Free plan par restart/spin-down par chat history reset ho sakti hai. Persistent history ke liye paid plan + disk (`render.yaml` me `disk` block) use karo.

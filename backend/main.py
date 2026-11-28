@@ -115,6 +115,7 @@ class ChatRequest(BaseModel):
     mode: str = ""
     chapter: str = ""
     attachments: list[Attachment] = Field(default_factory=list)
+    history: list = Field(default_factory=list)
 
     model_config = {"populate_by_name": True}
 
@@ -372,7 +373,7 @@ def chat(request: Request, req: ChatRequest):
     result = answer_question(
         question=question or req.question,
         board=req.board, klass=req.klass, subject=req.subject,
-        language=req.language, images=images or None, mode=mode, level=req.level,
+        language=req.language, images=images or None, mode=mode, level=req.level, history=req.history,
     )
     return {"answer": result.get("answer", ""), "sources": result.get("sources", []), "mode": result.get("mode", "unknown")}
 
@@ -391,12 +392,12 @@ def chat_stream(request: Request, req: ChatRequest):
             return
         if images:
             result = answer_question(question=question or req.question, board=req.board, klass=req.klass,
-                                     subject=req.subject, language=req.language, images=images, mode="vision", level=req.level)
+                                     subject=req.subject, language=req.language, images=images, mode="vision", level=req.level, history=req.history)
             yield "data: " + json.dumps({"event": "delta", "text": result.get("answer", "")}, ensure_ascii=False) + "\n\n"
             yield "data: " + json.dumps({"event": "done", "sources": result.get("sources", []), "mode": result.get("mode", "vision")}, ensure_ascii=False) + "\n\n"
             return
         for event, payload in answer_stream(question or req.question, req.board, req.klass, req.subject,
-                                            req.language, mode, req.level):
+                                            req.language, mode, req.level, req.history):
             data = {"event": event}
             data.update(payload)
             yield "data: " + json.dumps(data, ensure_ascii=False) + "\n\n"

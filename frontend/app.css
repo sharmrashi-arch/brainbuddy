@@ -659,3 +659,36 @@ a:hover { text-decoration: underline; }
 .login-note { font-size: 11px; color: var(--color-text-muted); margin: 18px 0 0; line-height: 1.5; }
 .google-btn-container { display: flex; justify-content: center; margin-top: 4px; }
 [dir="rtl"] .login-card { text-align: right; }
+
+/* App fits the viewport; chat area scrolls internally (mobile fix) */
+.app { height: 100vh; height: 100dvh; }
+.main { min-height: 0; }
+.chat-area { min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+
+/* Mobile refinements */
+@media (max-width: 480px) {
+  .topbar { padding: 0 10px; gap: 6px; }
+  .topbar-actions { gap: 4px; }
+  .btn-lang { padding: 6px 8px; gap: 6px; }
+  .btn-lang #langBtnText { display: none; }
+  .lang-dropdown { width: 260px; right: -8px; }
+  [dir="rtl"] .lang-dropdown { right: auto; left: -8px; }
+  .welcome-title { font-size: 23px; line-height: 1.25; }
+  .cards-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .card { padding: 14px; }
+  .chat-inner { padding: 12px; padding-bottom: 96px; }
+  .chat-composer { padding: 10px 12px; padding-bottom: calc(12px + env(safe-area-inset-bottom)); }
+  .composer-card { padding: 12px; }
+  .composer-bottom-input { padding: 6px; gap: 4px; }
+  .composer-actions { gap: 2px; }
+  .btn-attach, .btn-mic, .btn-send { width: 36px; height: 36px; }
+  .btn-attach .icon, .btn-mic .icon, .btn-send .icon { width: 20px; height: 20px; }
+  .message { max-width: 94%; }
+  .message-bubble { padding: 10px 12px; font-size: 14px; }
+  .message-avatar { width: 28px; height: 28px; }
+  .attach-chip { max-width: 150px; }
+  .msg-image { max-width: 200px; max-height: 160px; }
+  .login-card { padding: 24px 18px; }
+  .login-title { font-size: 20px; }
+  .profile-menu { left: 6px; right: 6px; }
+}

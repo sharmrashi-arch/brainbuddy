@@ -416,6 +416,8 @@
       .catch(() => showToast('Google login failed'));
   }
 
+  let languageTouched = false;
+
   function loadLanguage() {
     const saved = localStorage.getItem('language');
     if (saved && LANGUAGES.find(l => l.code === saved)) {
@@ -429,7 +431,7 @@
   }
 
   function getApiLang() {
-    return currentLang || 'en';
+    return languageTouched ? (currentLang || 'auto') : 'auto';
   }
 
   function applyRTL() {
@@ -440,7 +442,7 @@
   }
 
   function updateLangButton() {
-    const lang = LANGUAGES.find(l => l.code === currentLang) || LANGUAGES[0];
+    const lang = languageTouched ? (LANGUAGES.find(l => l.code === currentLang) || LANGUAGES[0]) : LANGUAGES[0];
     const btnText = qs('#langBtnText');
     if (btnText) btnText.textContent = lang.en;
   }
@@ -475,6 +477,7 @@
 
   function selectLanguage(code) {
     currentLang = code;
+    languageTouched = true;
     localStorage.setItem('language', code);
     updateLangButton();
     applyRTL();
@@ -978,6 +981,9 @@
   async function streamChat(question, attachments, convoRef) {
     const controller = new AbortController();
     activeController = controller;
+    const isFirstReply = !convoRef.some(m => m && m.role === 'assistant');
+    const history = convoRef.slice(0, -1).filter(m => m && m.content).slice(-12)
+      .map(m => ({ role: m.role, content: String(m.content).slice(0, 4000) }));
     const el = createAssistantShell();
     const stopBtn = el.querySelector('.action-stop');
     const bubble = el.querySelector('.message-bubble');
@@ -996,7 +1002,7 @@
       const res = await apiFetch('/api/chat/stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question, language: getApiLang(), attachments, level: localStorage.getItem('answer_level') || 'normal' })
+        body: JSON.stringify({ question, language: getApiLang(), attachments, level: localStorage.getItem('answer_level') || 'normal', history })
       });
       if (!res.ok || !res.body) throw new Error('stream failed');
       const reader = res.body.getReader();
@@ -1020,12 +1026,12 @@
         }
       }
       if (raf) { cancelAnimationFrame(raf); raf = null; }
-      finalizeAssistant(el, acc || t('assistantNoReply'), sources, true);
+      finalizeAssistant(el, acc || t('assistantNoReply'), sources, isFirstReply);
       recordAssistant(convoRef, question, acc, sources);
     } catch (e) {
       if (raf) { cancelAnimationFrame(raf); raf = null; }
       if (e && e.name === 'AbortError') {
-        finalizeAssistant(el, acc || '_Stopped._', sources, true);
+        finalizeAssistant(el, acc || '_Stopped._', sources, isFirstReply);
         recordAssistant(convoRef, question, acc, sources);
       } else {
         finalizeAssistant(el, acc || t('assistantError'), sources, false);

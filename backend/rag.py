@@ -120,17 +120,26 @@ def build_context(question, board="", klass="", subject=""):
     return contexts, sources, mode
 
 
-def build_messages(question, board="", klass="", subject="", language="en", mode="chat", level="normal"):
+def build_messages(question, board="", klass="", subject="", language="en", mode="chat", level="normal", history=None):
     language = resolve_language(language, question)
     contexts, sources, ctx_mode = build_context(question, board=board, klass=klass, subject=subject)
     use_mode = mode if mode in ("chat", "math", "rag", "serp", "vision") else ctx_mode
     system = build_system_prompt(language, level=level, mode=use_mode)
     user = build_rag_prompt(question, contexts, language)
-    messages = [{"role": "system", "content": system}, {"role": "user", "content": user}]
+    messages = [{"role": "system", "content": system}]
+    for m in (history or [])[-12:]:
+        if isinstance(m, dict):
+            role = m.get("role")
+            content = m.get("content")
+        else:
+            role, content = None, None
+        if role in ("user", "assistant") and content:
+            messages.append({"role": role, "content": str(content)[:4000]})
+    messages.append({"role": "user", "content": user})
     return messages, sources, use_mode
 
 
-def answer_question(question, board="", klass="", subject="", language="en", images=None, mode="chat", level="normal"):
+def answer_question(question, board="", klass="", subject="", language="en", images=None, mode="chat", level="normal", history=None):
     q = (question or "").strip()
     if not q:
         return {"answer": "Question is empty.", "sources": [], "mode": "error"}
@@ -144,7 +153,7 @@ def answer_question(question, board="", klass="", subject="", language="en", ima
             return {"answer": demo_answer(q, reason="vision error: %s" % e), "sources": [], "mode": "demo"}
         return {"answer": answer, "sources": [], "mode": "vision"}
 
-    messages, sources, use_mode = build_messages(q, board, klass, subject, language, mode, level)
+    messages, sources, use_mode = build_messages(q, board, klass, subject, language, mode, level, history)
     if not has_groq():
         if not sources:
             sources = _load_source_hints()
@@ -161,10 +170,10 @@ def answer_question(question, board="", klass="", subject="", language="en", ima
     return {"answer": answer, "sources": sources[:5], "mode": use_mode}
 
 
-def answer_stream(question, board="", klass="", subject="", language="en", mode="chat", level="normal"):
+def answer_stream(question, board="", klass="", subject="", language="en", mode="chat", level="normal", history=None):
     """Yield (event, payload) tuples for SSE streaming."""
     q = (question or "").strip()
-    messages, sources, use_mode = build_messages(q, board, klass, subject, language, mode, level)
+    messages, sources, use_mode = build_messages(q, board, klass, subject, language, mode, level, history)
     yield ("start", {"mode": use_mode, "sources": sources[:5]})
     if not has_groq():
         yield ("delta", {"text": demo_answer(q, sources=sources or _load_source_hints(), reason="GROQ key missing")})
